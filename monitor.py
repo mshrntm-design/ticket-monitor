@@ -1,16 +1,16 @@
 import os
 import hashlib
 import smtplib
+import subprocess
 from email.mime.text import MIMEText
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
 import time
 
 TARGET_URL = os.environ["TARGET_URL"]
 GMAIL_ADDRESS = os.environ["GMAIL_ADDRESS"]
 GMAIL_PASSWORD = os.environ["GMAIL_PASSWORD"]
-KEYWORD = "加古川"  # 監視するキーワード
+KEYWORD = "加古川"
 PREVIOUS_HASH_FILE = "previous_hash.txt"
 
 def get_page_content():
@@ -37,10 +37,18 @@ def send_email(subject, body):
         smtp.login(GMAIL_ADDRESS, GMAIL_PASSWORD)
         smtp.send_message(msg)
 
+def save_hash_to_repo(hash_value):
+    with open(PREVIOUS_HASH_FILE, "w") as f:
+        f.write(hash_value)
+    subprocess.run(["git", "config", "user.email", "monitor@github.com"])
+    subprocess.run(["git", "config", "user.name", "Monitor Bot"])
+    subprocess.run(["git", "add", PREVIOUS_HASH_FILE])
+    subprocess.run(["git", "commit", "-m", "Update hash"])
+    subprocess.run(["git", "push"])
+
 def main():
     content = get_page_content()
 
-    # 加古川のチケットに関する部分だけ抽出
     if KEYWORD not in content:
         print(f"「{KEYWORD}」の情報がページに見つかりません")
         return
@@ -48,8 +56,7 @@ def main():
     current_hash = get_hash(content)
 
     if not os.path.exists(PREVIOUS_HASH_FILE):
-        with open(PREVIOUS_HASH_FILE, "w") as f:
-            f.write(current_hash)
+        save_hash_to_repo(current_hash)
         print("初回実行：ハッシュを保存しました")
         return
 
@@ -57,8 +64,7 @@ def main():
         previous_hash = f.read().strip()
 
     if current_hash != previous_hash:
-        with open(PREVIOUS_HASH_FILE, "w") as f:
-            f.write(current_hash)
+        save_hash_to_repo(current_hash)
         send_email(
             "【速報】レミオロメン加古川のチケット情報が更新されました！",
             f"リセールチケットが出た可能性があります！今すぐ確認してください。\n\n{TARGET_URL}"
