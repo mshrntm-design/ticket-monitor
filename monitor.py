@@ -10,7 +10,6 @@ import time
 TARGET_URL = os.environ["TARGET_URL"]
 GMAIL_ADDRESS = os.environ["GMAIL_ADDRESS"]
 GMAIL_PASSWORD = os.environ["GMAIL_PASSWORD"]
-KEYWORD = "加古川"
 PREVIOUS_HASH_FILE = "previous_hash.txt"
 
 def get_page_content():
@@ -48,11 +47,6 @@ def save_hash_to_repo(hash_value):
 
 def main():
     content = get_page_content()
-
-    if KEYWORD not in content:
-        print(f"「{KEYWORD}」の情報がページに見つかりません")
-        return
-
     current_hash = get_hash(content)
 
     if not os.path.exists(PREVIOUS_HASH_FILE):
