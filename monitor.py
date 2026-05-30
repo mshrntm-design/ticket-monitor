@@ -6,6 +6,8 @@ from email.mime.text import MIMEText
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 import time
 
 TARGET_URL = os.environ["TARGET_URL"]
@@ -18,16 +20,34 @@ def get_status_content():
     options.add_argument("--headless")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
     driver = webdriver.Chrome(options=options)
     driver.get(TARGET_URL)
-    time.sleep(5)
 
-    # CSSセレクターで取得
+    # 最大15秒待って要素が出るまで待機
+    try:
+        WebDriverWait(driver, 15).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, ".lt-ticket-list-item__status"))
+        )
+    except Exception:
+        pass
+
+    time.sleep(3)
+
+    # ページ全体のテキストから「予定枚数終了」などを含む部分を取得
+    page_source = driver.page_source
     elements = driver.find_elements(By.CSS_SELECTOR, ".lt-ticket-list-item__status")
     status_text = "\n".join([el.text for el in elements])
-    driver.quit()
 
-    print(f"現在のチケット状況：\n{status_text}")
+    # 取得できなかった場合はページソースで確認
+    if not status_text.strip():
+        if "lt-ticket-list-item__status" in page_source:
+            status_text = "要素は存在しますがテキスト取得失敗"
+        else:
+            status_text = ""
+
+    driver.quit()
+    print(f"現在のチケット状況：{status_text}")
     return status_text
 
 def get_hash(content):
