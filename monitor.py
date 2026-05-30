@@ -37,7 +37,7 @@ def get_status_content():
     # ページ全体のテキストから「予定枚数終了」などを含む部分を取得
     page_source = driver.page_source
     elements = driver.find_elements(By.CSS_SELECTOR, ".lt-ticket-list-item__status")
-    status_text = "\n".join([el.text for el in elements])
+    status_text = "\n".join([el.text.replace("warning\n", "") for el in elements])
 
     # 取得できなかった場合はページソースで確認
     if not status_text.strip():
