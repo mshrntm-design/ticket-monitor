@@ -6,15 +6,12 @@ from email.mime.text import MIMEText
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 import time
 
 TARGET_URL = os.environ["TARGET_URL"]
 GMAIL_ADDRESS = os.environ["GMAIL_ADDRESS"]
 GMAIL_PASSWORD = os.environ["GMAIL_PASSWORD"]
 PREVIOUS_HASH_FILE = "previous_hash.txt"
-TARGET_CLASS = "lt-ticket-list-item__status"
 
 def get_status_content():
     options = Options()
@@ -24,12 +21,12 @@ def get_status_content():
     driver = webdriver.Chrome(options=options)
     driver.get(TARGET_URL)
     time.sleep(5)
-    
-    # チケット状況の部分だけ取得
-    elements = driver.find_elements(By.CLASS_NAME, TARGET_CLASS)
+
+    # CSSセレクターで取得
+    elements = driver.find_elements(By.CSS_SELECTOR, ".lt-ticket-list-item__status")
     status_text = "\n".join([el.text for el in elements])
     driver.quit()
-    
+
     print(f"現在のチケット状況：\n{status_text}")
     return status_text
 
@@ -56,8 +53,8 @@ def save_hash_to_repo(hash_value):
 
 def main():
     status_text = get_status_content()
-    
-    if not status_text:
+
+    if not status_text.strip():
         print("チケット状況が取得できませんでした")
         return
 
