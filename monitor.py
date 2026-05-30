@@ -5,14 +5,18 @@ import subprocess
 from email.mime.text import MIMEText
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 import time
 
 TARGET_URL = os.environ["TARGET_URL"]
 GMAIL_ADDRESS = os.environ["GMAIL_ADDRESS"]
 GMAIL_PASSWORD = os.environ["GMAIL_PASSWORD"]
 PREVIOUS_HASH_FILE = "previous_hash.txt"
+TARGET_CLASS = "lt-ticket-list-item__status"
 
-def get_page_content():
+def get_status_content():
     options = Options()
     options.add_argument("--headless")
     options.add_argument("--no-sandbox")
@@ -20,9 +24,14 @@ def get_page_content():
     driver = webdriver.Chrome(options=options)
     driver.get(TARGET_URL)
     time.sleep(5)
-    content = driver.page_source
+    
+    # チケット状況の部分だけ取得
+    elements = driver.find_elements(By.CLASS_NAME, TARGET_CLASS)
+    status_text = "\n".join([el.text for el in elements])
     driver.quit()
-    return content
+    
+    print(f"現在のチケット状況：\n{status_text}")
+    return status_text
 
 def get_hash(content):
     return hashlib.md5(content.encode()).hexdigest()
@@ -46,12 +55,17 @@ def save_hash_to_repo(hash_value):
     subprocess.run(["git", "push"])
 
 def main():
-    content = get_page_content()
-    current_hash = get_hash(content)
+    status_text = get_status_content()
+    
+    if not status_text:
+        print("チケット状況が取得できませんでした")
+        return
+
+    current_hash = get_hash(status_text)
 
     if not os.path.exists(PREVIOUS_HASH_FILE):
         save_hash_to_repo(current_hash)
-        print("初回実行：ハッシュを保存しました")
+        print("初回実行：状態を保存しました")
         return
 
     with open(PREVIOUS_HASH_FILE, "r") as f:
@@ -60,8 +74,8 @@ def main():
     if current_hash != previous_hash:
         save_hash_to_repo(current_hash)
         send_email(
-            "【速報】レミオロメン加古川のチケット情報が更新されました！",
-            f"リセールチケットが出た可能性があります！今すぐ確認してください。\n\n{TARGET_URL}"
+            "【速報】レミオロメン加古川のチケット状況が変化しました！",
+            f"チケットの状況が変わりました！今すぐ確認してください。\n\n現在の状況：\n{status_text}\n\n{TARGET_URL}"
         )
         print("変化を検知！メールを送信しました。")
     else:
