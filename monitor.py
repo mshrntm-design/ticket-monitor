@@ -10,44 +10,49 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import time
 
-TARGET_URL = os.environ["TARGET_URL"]
 GMAIL_ADDRESS = os.environ["GMAIL_ADDRESS"]
 GMAIL_PASSWORD = os.environ["GMAIL_PASSWORD"]
-PREVIOUS_HASH_FILE = "previous_hash.txt"
 
-def get_status_content():
+# 監視対象リスト
+TARGETS = [
+    {
+        "name": "レミオロメン加古川【ローチケ】",
+        "url": os.environ["TARGET_URL"],
+        "css": ".lt-ticket-list-item__status",
+        "hash_file": "hash_remioromen_ltike.txt",
+    },
+    {
+        "name": "矢井田瞳7/4クラブ月世界【ローチケ】",
+        "url": os.environ["TARGET_URL_YAHIDA_LTIKE"],
+        "css": ".AccordionBox__itemStatus",
+        "hash_file": "hash_yahida_ltike.txt",
+    },
+    {
+        "name": "矢井田瞳7/4クラブ月世界【eプラス】",
+        "url": os.environ["TARGET_URL_YAHIDA_EPLUS"],
+        "css": ".ticket-status__item",
+        "hash_file": "hash_yahida_eplus.txt",
+    },
+]
+
+def get_status(url, css):
     options = Options()
     options.add_argument("--headless")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
     driver = webdriver.Chrome(options=options)
-    driver.get(TARGET_URL)
-
-    # 最大15秒待って要素が出るまで待機
+    driver.get(url)
     try:
         WebDriverWait(driver, 15).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, ".lt-ticket-list-item__status"))
+            EC.presence_of_element_located((By.CSS_SELECTOR, css))
         )
     except Exception:
         pass
-
     time.sleep(3)
-
-    # ページ全体のテキストから「予定枚数終了」などを含む部分を取得
-    page_source = driver.page_source
-    elements = driver.find_elements(By.CSS_SELECTOR, ".lt-ticket-list-item__status")
-    status_text = "\n".join([el.text.replace("warning\n", "") for el in elements])
-
-    # 取得できなかった場合はページソースで確認
-    if not status_text.strip():
-        if "lt-ticket-list-item__status" in page_source:
-            status_text = "要素は存在しますがテキスト取得失敗"
-        else:
-            status_text = ""
-
+    elements = driver.find_elements(By.CSS_SELECTOR, css)
+    status_text = "\n".join([el.text.replace("warning\n", "").strip() for el in elements if el.text.strip()])
     driver.quit()
-    print(f"現在のチケット状況：{status_text}")
     return status_text
 
 def get_hash(content):
@@ -62,41 +67,48 @@ def send_email(subject, body):
         smtp.login(GMAIL_ADDRESS, GMAIL_PASSWORD)
         smtp.send_message(msg)
 
-def save_hash_to_repo(hash_value):
-    with open(PREVIOUS_HASH_FILE, "w") as f:
+def save_hash_to_repo(hash_file, hash_value):
+    with open(hash_file, "w") as f:
         f.write(hash_value)
     subprocess.run(["git", "config", "user.email", "monitor@github.com"])
     subprocess.run(["git", "config", "user.name", "Monitor Bot"])
-    subprocess.run(["git", "add", PREVIOUS_HASH_FILE])
-    subprocess.run(["git", "commit", "-m", "Update hash"])
-    subprocess.run(["git", "push"])
+    subprocess.run(["git", "add", hash_file])
+    result = subprocess.run(["git", "commit", "-m", f"Update {hash_file}"], capture_output=True)
+    if result.returncode == 0:
+        subprocess.run(["git", "push"])
 
-def main():
-    status_text = get_status_content()
+def check_target(target):
+    print(f"\n--- {target['name']} ---")
+    status_text = get_status(target["url"], target["css"])
 
     if not status_text.strip():
-        print("チケット状況が取得できませんでした")
+        print("状況が取得できませんでした")
         return
 
+    print(f"現在の状況：{status_text}")
     current_hash = get_hash(status_text)
 
-    if not os.path.exists(PREVIOUS_HASH_FILE):
-        save_hash_to_repo(current_hash)
+    if not os.path.exists(target["hash_file"]):
+        save_hash_to_repo(target["hash_file"], current_hash)
         print("初回実行：状態を保存しました")
         return
 
-    with open(PREVIOUS_HASH_FILE, "r") as f:
+    with open(target["hash_file"], "r") as f:
         previous_hash = f.read().strip()
 
     if current_hash != previous_hash:
-        save_hash_to_repo(current_hash)
+        save_hash_to_repo(target["hash_file"], current_hash)
         send_email(
-            "【速報】レミオロメン加古川のチケット状況が変化しました！",
-            f"チケットの状況が変わりました！今すぐ確認してください。\n\n現在の状況：\n{status_text}\n\n{TARGET_URL}"
+            f"【速報】{target['name']}のチケット状況が変化しました！",
+            f"チケットの状況が変わりました！今すぐ確認してください。\n\n現在の状況：\n{status_text}\n\n{target['url']}"
         )
         print("変化を検知！メールを送信しました。")
     else:
         print("変化なし")
+
+def main():
+    for target in TARGETS:
+        check_target(target)
 
 if __name__ == "__main__":
     main()
