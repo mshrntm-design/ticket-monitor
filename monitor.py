@@ -19,40 +19,46 @@ TARGETS = [
         "url": os.environ["TARGET_URL"],
         "css": ".lt-ticket-list-item__status",
         "hash_file": "hash_remioromen_ltike.txt",
+        "perf_cd": None,
     },
     {
         "name": "矢井田瞳7/4クラブ月世界【ローチケ】",
         "url": os.environ["TARGET_URL_YAHIDA_LTIKE"],
         "css": ".AccordionBox__itemStatus",
         "hash_file": "hash_yahida_ltike.txt",
+        "perf_cd": None,
     },
     {
         "name": "矢井田瞳7/4クラブ月世界【eプラス】",
         "url": os.environ["TARGET_URL_YAHIDA_EPLUS"],
         "css": ".ticket-status__item",
         "hash_file": "hash_yahida_eplus.txt",
+        "perf_cd": None,
     },
     {
         "name": "CHEMISTRY三田9/12【チケットぴあ】",
         "url": os.environ["TARGET_URL_CHEMISTRY_PIA"],
         "css": ".ticketSelect__icon",
         "hash_file": "hash_chemistry_pia.txt",
+        "perf_cd": "001",
     },
     {
         "name": "CHEMISTRY三田9/12【ローチケ】",
         "url": os.environ["TARGET_URL_CHEMISTRY_LTIKE"],
         "css": ".AccordionBox__itemStatus",
         "hash_file": "hash_chemistry_ltike.txt",
+        "perf_cd": None,
     },
     {
         "name": "CHEMISTRY三田9/12【eプラス】",
         "url": os.environ["TARGET_URL_CHEMISTRY_EPLUS"],
         "css": ".ticket-status__item",
         "hash_file": "hash_chemistry_eplus.txt",
+        "perf_cd": None,
     },
 ]
 
-def get_status(url, css):
+def get_status(url, css, perf_cd=None):
     options = Options()
     options.add_argument("--headless")
     options.add_argument("--no-sandbox")
@@ -67,7 +73,16 @@ def get_status(url, css):
     except Exception:
         pass
     time.sleep(3)
-    elements = driver.find_elements(By.CSS_SELECTOR, css)
+
+    if perf_cd:
+        try:
+            section = driver.find_element(By.CSS_SELECTOR, f"[data-perf-cd='{perf_cd}']")
+            elements = section.find_elements(By.CSS_SELECTOR, css)
+        except Exception:
+            elements = driver.find_elements(By.CSS_SELECTOR, css)
+    else:
+        elements = driver.find_elements(By.CSS_SELECTOR, css)
+
     status_text = "\n".join([el.text.replace("warning\n", "").strip() for el in elements if el.text.strip()])
     driver.quit()
     return status_text
@@ -96,7 +111,7 @@ def save_hash_to_repo(hash_file, hash_value):
 
 def check_target(target):
     print(f"\n--- {target['name']} ---")
-    status_text = get_status(target["url"], target["css"])
+    status_text = get_status(target["url"], target["css"], target.get("perf_cd"))
 
     if not status_text.strip():
         print("状況が取得できませんでした")
