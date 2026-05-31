@@ -13,7 +13,6 @@ import time
 GMAIL_ADDRESS = os.environ["GMAIL_ADDRESS"]
 GMAIL_PASSWORD = os.environ["GMAIL_PASSWORD"]
 
-# 監視対象リスト
 TARGETS = [
     {
         "name": "レミオロメン加古川【ローチケ】",
@@ -32,6 +31,24 @@ TARGETS = [
         "url": os.environ["TARGET_URL_YAHIDA_EPLUS"],
         "css": ".ticket-status__item",
         "hash_file": "hash_yahida_eplus.txt",
+    },
+    {
+        "name": "CHEMISTRY三田9/12【チケットぴあ】",
+        "url": os.environ["TARGET_URL_CHEMISTRY_PIA"],
+        "css": ".ticketSelect__icon",
+        "hash_file": "hash_chemistry_pia.txt",
+    },
+    {
+        "name": "CHEMISTRY三田9/12【ローチケ】",
+        "url": os.environ["TARGET_URL_CHEMISTRY_LTIKE"],
+        "css": ".AccordionBox__itemStatus",
+        "hash_file": "hash_chemistry_ltike.txt",
+    },
+    {
+        "name": "CHEMISTRY三田9/12【eプラス】",
+        "url": os.environ["TARGET_URL_CHEMISTRY_EPLUS"],
+        "css": ".ticket-status__item",
+        "hash_file": "hash_chemistry_eplus.txt",
     },
 ]
 
