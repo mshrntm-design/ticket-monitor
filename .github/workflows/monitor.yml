@@ -34,6 +34,9 @@ jobs:
           TARGET_URL: ${{ secrets.TARGET_URL }}
           TARGET_URL_YAHIDA_LTIKE: ${{ secrets.TARGET_URL_YAHIDA_LTIKE }}
           TARGET_URL_YAHIDA_EPLUS: ${{ secrets.TARGET_URL_YAHIDA_EPLUS }}
+          TARGET_URL_CHEMISTRY_PIA: ${{ secrets.TARGET_URL_CHEMISTRY_PIA }}
+          TARGET_URL_CHEMISTRY_LTIKE: ${{ secrets.TARGET_URL_CHEMISTRY_LTIKE }}
+          TARGET_URL_CHEMISTRY_EPLUS: ${{ secrets.TARGET_URL_CHEMISTRY_EPLUS }}
           GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
           GMAIL_PASSWORD: ${{ secrets.GMAIL_PASSWORD }}
         run: python monitor.py
