@@ -14,13 +14,7 @@ GMAIL_ADDRESS = os.environ["GMAIL_ADDRESS"]
 GMAIL_PASSWORD = os.environ["GMAIL_PASSWORD"]
 
 TARGETS = [
-    {
-        "name": "レミオロメン加古川【ローチケ】",
-        "url": os.environ["TARGET_URL"],
-        "css": ".lt-ticket-list-item__status",
-        "hash_file": "hash_remioromen_ltike.txt",
-        "perf_cd": None,
-    },
+
     {
         "name": "矢井田瞳7/4クラブ月世界【ローチケ】",
         "url": os.environ["TARGET_URL_YAHIDA_LTIKE"],
