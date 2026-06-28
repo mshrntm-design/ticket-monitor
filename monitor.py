@@ -23,14 +23,6 @@ TARGETS = [
         "keywords": ["クラブ月世界", "兵庫県"],
     },
     {
-        "name": "矢井田瞳7/4クラブ月世界【ローチケ】",
-        "url": os.environ["TARGET_URL_YAHIDA_LTIKE"],
-        "css": ".AccordionBox__itemStatus",
-        "hash_file": "h2.txt",
-        "perf_cd": None,
-        "keywords": [],
-    },
-    {
         "name": "矢井田瞳7/4クラブ月世界【eプラス】",
         "url": os.environ["TARGET_URL_YAHIDA_EPLUS"],
         "css": ".ticket-status__item",
