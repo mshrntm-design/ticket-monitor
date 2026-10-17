@@ -9,54 +9,55 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import time
+import requests
+import re
 
 GMAIL_ADDRESS = os.environ["GMAIL_ADDRESS"]
 GMAIL_PASSWORD = os.environ["GMAIL_PASSWORD"]
 
 TARGETS = [
     {
-        "name": "矢井田瞳【チケットぴあ公式リセール】",
-        "url": os.environ["TARGET_URL_YAHIDA_PIA_RESALE"],
+        "name": "絢香姫路11/22【チケットぴあ公式リセール】",
+        "url": os.environ["TARGET_URL_AYAKA_PIA_RESALE"],
         "css": ".sl_validTicket_map",
-        "hash_file": "h_yahida_pia_resale.txt",
+        "hash_file": "h1.txt",
         "perf_cd": None,
-        "keywords": ["クラブ月世界", "兵庫県"],
+        "keywords": ["姫路", "アクリエ"],
+        "use_requests": True,
     },
     {
-        "name": "矢井田瞳7/4クラブ月世界【eプラス】",
-        "url": os.environ["TARGET_URL_YAHIDA_EPLUS"],
+        "name": "絢香姫路11/22【ローチケ】",
+        "url": os.environ["TARGET_URL_AYAKA_LTIKE"],
+        "css": ".AccordionBox__itemStatus",
+        "hash_file": "h2.txt",
+        "perf_cd": None,
+        "keywords": [],
+        "use_requests": False,
+    },
+    {
+        "name": "絢香姫路11/22【eプラス】",
+        "url": os.environ["TARGET_URL_AYAKA_EPLUS"],
         "css": ".ticket-status__item",
         "hash_file": "h3.txt",
         "perf_cd": None,
         "keywords": [],
-    },
-    {
-        "name": "CHEMISTRY三田9/12【チケットぴあ】",
-        "url": os.environ["TARGET_URL_CHEMISTRY_PIA"],
-        "css": ".ticketSelect__icon",
-        "hash_file": "h4.txt",
-        "perf_cd": "001",
-        "keywords": [],
-    },
-    {
-        "name": "CHEMISTRY三田9/12【ローチケ】",
-        "url": os.environ["TARGET_URL_CHEMISTRY_LTIKE"],
-        "css": ".AccordionBox__itemStatus",
-        "hash_file": "h5.txt",
-        "perf_cd": None,
-        "keywords": [],
-    },
-    {
-        "name": "CHEMISTRY三田9/12【eプラス】",
-        "url": os.environ["TARGET_URL_CHEMISTRY_EPLUS"],
-        "css": ".ticket-status__item",
-        "hash_file": "h6.txt",
-        "perf_cd": None,
-        "keywords": [],
+        "use_requests": False,
     },
 ]
 
-def fetch(url, css, perf_cd=None):
+def fetch_requests(url, css_pattern):
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "ja-JP,ja;q=0.9",
+        "Connection": "keep-alive",
+    }
+    response = requests.get(url, headers=headers, timeout=30)
+    html = response.text
+    matches = re.findall(r'class="sl_validTicket_map">([^<]+)<', html)
+    return "\n".join(matches)
+
+def fetch_selenium(url, css, perf_cd=None):
     opts = Options()
     opts.add_argument("--headless")
     opts.add_argument("--no-sandbox")
@@ -71,7 +72,6 @@ def fetch(url, css, perf_cd=None):
     except Exception:
         pass
     time.sleep(3)
-
     if perf_cd:
         try:
             section = driver.find_element(By.CSS_SELECTOR, f"[data-perf-cd='{perf_cd}']")
@@ -80,7 +80,6 @@ def fetch(url, css, perf_cd=None):
             items = driver.find_elements(By.CSS_SELECTOR, css)
     else:
         items = driver.find_elements(By.CSS_SELECTOR, css)
-
     result = "\n".join([e.text.replace("warning\n", "").strip() for e in items if e.text.strip()])
     driver.quit()
     return result
@@ -108,10 +107,13 @@ def save(hash_file, hash_value):
         subprocess.run(["git", "push"])
 
 def check(t):
-    text = fetch(t["url"], t["css"], t.get("perf_cd"))
-    keywords = t.get("keywords", [])
+    print(f"\n--- {t['name']} ---")
+    if t.get("use_requests"):
+        text = fetch_requests(t["url"], t["css"])
+    else:
+        text = fetch_selenium(t["url"], t["css"], t.get("perf_cd"))
 
-    # キーワード監視の場合
+    keywords = t.get("keywords", [])
     if keywords:
         found = [kw for kw in keywords if kw in text]
         if found:
@@ -124,11 +126,11 @@ def check(t):
             print(f"キーワードなし：{keywords}")
         return
 
-    # 通常の変化検知
     if not text.strip():
         print("状況が取得できませんでした")
         return
 
+    print(f"現在の状況：{text}")
     h = get_hash(text)
     if not os.path.exists(t["hash_file"]):
         save(t["hash_file"], h)
