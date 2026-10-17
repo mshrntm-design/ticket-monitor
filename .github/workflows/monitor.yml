@@ -23,7 +23,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install selenium webdriver-manager
+          pip install selenium webdriver-manager requests
 
       - name: Install Chromium
         run: |
@@ -33,12 +33,9 @@ jobs:
       - name: Run monitor
         timeout-minutes: 8
         env:
-          TARGET_URL_YAHIDA_PIA_RESALE: ${{ secrets.TARGET_URL_YAHIDA_PIA_RESALE }}
-          TARGET_URL_YAHIDA_LTIKE: ${{ secrets.TARGET_URL_YAHIDA_LTIKE }}
-          TARGET_URL_YAHIDA_EPLUS: ${{ secrets.TARGET_URL_YAHIDA_EPLUS }}
-          TARGET_URL_CHEMISTRY_PIA: ${{ secrets.TARGET_URL_CHEMISTRY_PIA }}
-          TARGET_URL_CHEMISTRY_LTIKE: ${{ secrets.TARGET_URL_CHEMISTRY_LTIKE }}
-          TARGET_URL_CHEMISTRY_EPLUS: ${{ secrets.TARGET_URL_CHEMISTRY_EPLUS }}
+          TARGET_URL_AYAKA_PIA_RESALE: ${{ secrets.TARGET_URL_AYAKA_PIA_RESALE }}
+          TARGET_URL_AYAKA_LTIKE: ${{ secrets.TARGET_URL_AYAKA_LTIKE }}
+          TARGET_URL_AYAKA_EPLUS: ${{ secrets.TARGET_URL_AYAKA_EPLUS }}
           GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
           GMAIL_PASSWORD: ${{ secrets.GMAIL_PASSWORD }}
         run: python monitor.py
